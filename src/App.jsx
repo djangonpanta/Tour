@@ -1,51 +1,57 @@
 import React, { useEffect, useState } from "react";
-import Loading from "./Loading";
-import Tours from "./Tours";
-const url = "https://course-api.com/react-tours-project";
+import NoteList from "./components/notes/NoteList";
+import "./components/notes/note.css";
+import { nanoid } from "nanoid";
+import Search from "./components/notes/Search";
+import Header from "./components/notes/Header";
 
 const App = () => {
-  const [loading, setLoading] = useState(true);
-  const [tours, setTours] = useState([]);
+  const [notes, setNotes] = useState([]);
 
-  const removeTour = (id) => {
-    const newTours = tours.filter((tour) => tour.id !== id);
-    setTours(newTours);
-  };
+  const [searchText, setSearchText] = useState("");
 
-  const fetchTours = async () => {
-    setLoading(false);
-    const response = await fetch(url);
-    const tours = await response.json();
-    setTours(tours);
-    setLoading(false);
-  };
+  const [darkMode, setDarkMode] = useState(false);
+
   useEffect(() => {
-    fetchTours();
+    const savedNotes = JSON.parse(localStorage.getItem("react-notes-app-data"));
+    if (savedNotes) {
+      setNotes(savedNotes);
+    }
   }, []);
 
-  if (loading) {
-    return (
-      <main>
-        <Loading />
-      </main>
-    );
-  }
-  if (tours.length === 0) {
-    return (
-      <main>
-        <div className="title">
-          <h2>no tours left</h2>
-          <button className="btn" onClick={() => fetchTours()}>
-            refresh
-          </button>
-        </div>
-      </main>
-    );
-  }
+  useEffect(() => {
+    localStorage.setItem("react-notes-app-data", JSON.stringify(notes));
+  }, [notes]);
+
+  const addNote = (text) => {
+    const date = new Date();
+    const newNote = {
+      id: nanoid(),
+      text: text,
+      date: date.toLocaleDateString(),
+    };
+    const newNotes = [...notes, newNote];
+    setNotes(newNotes);
+  };
+  const deleteNote = (id) => {
+    const newNotes = notes.filter((note) => note.id !== id);
+    setNotes(newNotes);
+  };
+
   return (
-    <main>
-      <Tours tours={tours} removeTour={removeTour} />
-    </main>
+    <div className={`${darkMode && "dark-mode"}`}>
+      <div className="container">
+        <Header handleToggleDarkMode={setDarkMode} />
+        <Search handleSearchNote={setSearchText} />
+        <NoteList
+          notes={notes.filter((note) =>
+            note.text.toLowerCase().includes(searchText)
+          )}
+          handleAddNote={addNote}
+          handleDeleteNote={deleteNote}
+        />
+      </div>
+    </div>
   );
 };
 
